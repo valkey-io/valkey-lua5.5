@@ -398,11 +398,10 @@ static void lua55EngineFunctionCall(
 
   ValkeyModuleString *username_str =
       ValkeyModule_GetCurrentUserName(module_ctx);
-  size_t uname_len;
-  const char *username = ValkeyModule_StringPtrLen(username_str, &uname_len);
+  const char *username = username_str ? ValkeyModule_StringPtrLen(username_str, NULL) : "default";
 
   lua55PerUserState *us = getOrCreateUserState(ctx, username);
-  ValkeyModule_FreeString(NULL, username_str);
+  if (username_str) ValkeyModule_FreeString(NULL, username_str);
 
   lua_State *lua = (type == VMSE_EVAL) ? us->eval_lua : us->function_lua;
   lua55Function *func = (lua55Function *)compiled_function->function;
