@@ -33,10 +33,10 @@ typedef struct lua_State lua_State;
 #define LUA_FULL_GC_CYCLE 500
 
 typedef struct errorInfo {
-  char *msg;
-  char *source;
-  char *line;
-  int ignore_err_stats_update;
+    char *msg;
+    char *source;
+    char *line;
+    int ignore_err_stats_update;
 } errorInfo;
 
 void lua55RegisterServerAPI(lua55EngineCtx *ctx, lua_State *lua);
@@ -52,8 +52,11 @@ void *lua55GetFromRegistry(lua_State *lua, const char *name);
 void lua55CallFunction(ValkeyModuleCtx *ctx,
                        ValkeyModuleScriptingEngineServerRuntimeCtx *r_ctx,
                        ValkeyModuleScriptingEngineSubsystemType type,
-                       lua_State *lua, ValkeyModuleString **keys, size_t nkeys,
-                       ValkeyModuleString **args, size_t nargs,
+                       lua_State *lua,
+                       ValkeyModuleString **keys,
+                       size_t nkeys,
+                       ValkeyModuleString **args,
+                       size_t nargs,
                        int lua_enable_insecure_api);
 
 void lua55ExtractErrorInformation(lua_State *lua, errorInfo *err_info);
@@ -61,8 +64,7 @@ void lua55ErrorInformationDiscard(errorInfo *err_info);
 
 unsigned long lua55Memory(lua_State *lua);
 
-int lua55CompileLibraryInUserState(lua_State *lua, const char *code,
-                                   size_t code_len, const char *library_name);
+int lua55CompileLibraryInUserState(lua_State *lua, const char *code, size_t code_len, const char *library_name);
 
 void lua55RemoveFunctionFromUserState(lua_State *lua,
                                       const char *function_name);
