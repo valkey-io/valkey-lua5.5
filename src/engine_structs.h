@@ -20,52 +20,52 @@
 #include <stdint.h>
 
 typedef struct lua55Library {
-  char *code;
-  size_t code_len;
-  uint64_t lib_id;
-  char *name;
-  int ref_count;
+    char *code;
+    size_t code_len;
+    uint64_t lib_id;
+    char *name;
+    int ref_count;
 } lua55Library;
 
 typedef struct lua55Function {
-  int is_from_eval;
-  union {
-    struct {
-      char *text;
-      size_t text_len;
-    } source;
-    struct {
-      char *name;
-      uint64_t lib_id;
-      uint64_t func_id;
-    } function_ref;
-  };
-  uint64_t func_id;
+    int is_from_eval;
+    union {
+        struct {
+            char *text;
+            size_t text_len;
+        } source;
+        struct {
+            char *name;
+            uint64_t lib_id;
+            uint64_t func_id;
+        } function_ref;
+    };
+    uint64_t func_id;
 } lua55Function;
 
 typedef struct lua55PerUserState {
-  lua_State *eval_lua;
-  lua_State *function_lua;
+    lua_State *eval_lua;
+    lua_State *function_lua;
 } lua55PerUserState;
 
 struct ValkeyModuleDict;
 
 typedef struct lua55EngineCtx {
-  lua_State *compile_lua;
+    lua_State *compile_lua;
 
-  struct ValkeyModuleDict *user_states;
-  struct ValkeyModuleDict *libraries;
+    struct ValkeyModuleDict *user_states;
+    struct ValkeyModuleDict *libraries;
 
-  char *redis_version;
-  uint32_t redis_version_num;
-  char *server_name;
-  char *valkey_version;
-  uint32_t valkey_version_num;
+    char *redis_version;
+    uint32_t redis_version_num;
+    char *server_name;
+    char *valkey_version;
+    uint32_t valkey_version_num;
 
-  uint64_t next_func_id;
-  uint64_t next_lib_id;
+    uint64_t next_func_id;
+    uint64_t next_lib_id;
 
-  int lua_enable_insecure_api;
+    int lua_enable_insecure_api;
 } lua55EngineCtx;
 
 #endif

@@ -17,9 +17,7 @@
 #include "valkeymodule.h"
 
 ValkeyModuleScriptingEngineCompiledFunction **
-lua55FunctionLibraryCreate(lua_State *lua, const char *code, size_t code_len,
-                           size_t timeout, size_t *out_num_compiled_functions,
-                           ValkeyModuleString **err);
+lua55FunctionLibraryCreate(lua_State *lua, const char *code, size_t code_len, size_t timeout, size_t *out_num_compiled_functions, ValkeyModuleString **err);
 
 void lua55InitFunctionScratchState(lua55EngineCtx *ctx, lua_State *lua);
 
