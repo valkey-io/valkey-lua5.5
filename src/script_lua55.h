@@ -57,12 +57,15 @@ void lua55CallFunction(ValkeyModuleCtx *ctx,
                        size_t nkeys,
                        ValkeyModuleString **args,
                        size_t nargs,
-                       int lua_enable_insecure_api);
+                       lua55EngineCtx *engine_ctx);
 
 void lua55ExtractErrorInformation(lua_State *lua, errorInfo *err_info);
 void lua55ErrorInformationDiscard(errorInfo *err_info);
 
 unsigned long lua55Memory(lua_State *lua);
+
+struct ValkeyModuleDict *lua55CoreCommandsCreate(ValkeyModuleCtx *ctx);
+void lua55ArgvCacheFree(lua55EngineCtx *ectx);
 
 int lua55CompileLibraryInUserState(lua_State *lua, const char *code, size_t code_len, const char *library_name);
 
@@ -72,5 +75,6 @@ void lua55RemoveFunctionFromUserState(lua_State *lua,
 int lua55UserStateRegisterFunction(lua_State *lua);
 
 char *lua55_strcpy(const char *str);
+char *lua55_strncpy(const char *str, size_t len);
 char *lua55_asprintf(char const *fmt, ...);
 #endif

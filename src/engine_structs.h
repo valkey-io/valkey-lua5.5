@@ -49,6 +49,10 @@ typedef struct lua55PerUserState {
 } lua55PerUserState;
 
 struct ValkeyModuleDict;
+struct ValkeyModuleString;
+
+#define LUA55_ARGV_CACHE_SIZE 32
+#define LUA55_ARGV_CACHE_MAX_LEN 64
 
 typedef struct lua55EngineCtx {
     lua_State *compile_lua;
@@ -66,6 +70,11 @@ typedef struct lua55EngineCtx {
     uint64_t next_lib_id;
 
     int lua_enable_insecure_api;
+
+    struct ValkeyModuleDict *core_commands;
+    struct ValkeyModuleString *argv_cache[LUA55_ARGV_CACHE_SIZE];
+    struct ValkeyModuleString *argv_buf[LUA55_ARGV_CACHE_SIZE];
+    int argv_cache_busy;
 } lua55EngineCtx;
 
 #endif
