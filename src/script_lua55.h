@@ -72,6 +72,16 @@ int lua55CompileLibraryInUserState(lua_State *lua, const char *code, size_t code
 void lua55RemoveFunctionFromUserState(lua_State *lua,
                                       const char *function_name);
 
+typedef struct lua55NamedArgKeys {
+    const char *function_name;
+    const char *description;
+    const char *callback;
+    const char *flags;
+} lua55NamedArgKeys;
+
+const char *lua55ReadNamedArgKeys(lua_State *lua, lua55NamedArgKeys *keys);
+void lua55PushNamedArg(lua_State *lua, const char *key);
+
 int lua55UserStateRegisterFunction(lua_State *lua);
 
 char *lua55_strcpy(const char *str);

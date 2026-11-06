@@ -83,6 +83,7 @@ set(MODULE_SRCS
     src/lua_struct.c
     src/lua_cmsgpack.c
     src/lua_bit.c
+    src/lua_coroutine.c
     src/strbuf.c
     src/fpconv.c
     src/fpconv_dtoa.c

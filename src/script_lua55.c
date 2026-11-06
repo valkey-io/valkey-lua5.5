@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <time.h>
 
 #define PROPAGATE_NONE 0
@@ -1594,6 +1595,7 @@ extern int luaopen_struct(lua_State *lua);
 extern int luaopen_cmsgpack(lua_State *lua);
 extern int luaopen_cmsgpack_safe(lua_State *lua);
 extern int luaopen_bit(lua_State *lua);
+extern int luaopen_coroutine_sharedhook(lua_State *lua);
 
 /* ---------------------------------------------------------------------------
  * Lua engine initialization and reset.
@@ -1626,6 +1628,7 @@ static void lua55LoadLibraries(lua_State *lua) {
     lua55RequireLib(lua, "_G", luaopen_base, 1);
     lua55RequireLib(lua, LUA_TABLIBNAME, luaopen_table, 1);
     lua55RequireLib(lua, LUA_STRLIBNAME, luaopen_string, 1);
+    lua55RequireLib(lua, LUA_COLIBNAME, luaopen_coroutine_sharedhook, 1);
     lua55RequireLib(lua, LUA_MATHLIBNAME, luaopen_math, 1);
     lua55RequireLib(lua, LUA_DBLIBNAME, luaopen_debug, 1);
     lua55RequireLib(lua, LUA_OSLIBNAME, luaopen_os, 1);
@@ -2048,9 +2051,66 @@ unsigned long lua55Memory(lua_State *lua) {
     return (unsigned long)lua_gc(lua, LUA_GCCOUNT, 0) * 1024LL;
 }
 
+static void lua55PickNamedArgKey(const char **winner, const char *key) {
+    if (*winner == NULL || strcmp(key, *winner) > 0)
+        *winner = key;
+}
+
+const char *lua55ReadNamedArgKeys(lua_State *lua, lua55NamedArgKeys *keys) {
+    const char *err = NULL;
+    memset(keys, 0, sizeof(*keys));
+
+    if (!lua_istable(lua, 1)) {
+        return "calling server.register_function with a single argument is only "
+               "applicable to Lua table "
+               "(representing named arguments).";
+    }
+
+    lua_pushnil(lua);
+    while (!err && lua_next(lua, 1)) {
+        const char *key = lua_isstring(lua, -2) ? lua_tostring(lua, -2) : NULL;
+        if (!key) {
+            err = "named argument key given to server.register_function is not a "
+                  "string";
+        } else if (!strcasecmp(key, "function_name")) {
+            if (lua_isstring(lua, -1))
+                lua55PickNamedArgKey(&keys->function_name, key);
+            else
+                err = "function_name argument given to server.register_function must "
+                      "be a string";
+        } else if (!strcasecmp(key, "description")) {
+            if (lua_isstring(lua, -1))
+                lua55PickNamedArgKey(&keys->description, key);
+            else
+                err = "description argument given to server.register_function must be "
+                      "a string";
+        } else if (!strcasecmp(key, "callback")) {
+            if (lua_isfunction(lua, -1))
+                lua55PickNamedArgKey(&keys->callback, key);
+            else
+                err = "callback argument given to server.register_function must be a "
+                      "function";
+        } else if (!strcasecmp(key, "flags")) {
+            if (lua_istable(lua, -1))
+                lua55PickNamedArgKey(&keys->flags, key);
+            else
+                err = "flags argument to server.register_function must be a table "
+                      "representing function flags";
+        } else {
+            err = "unknown argument given to server.register_function";
+        }
+        lua_pop(lua, err ? 2 : 1);
+    }
+    return err;
+}
+
+void lua55PushNamedArg(lua_State *lua, const char *key) {
+    lua_pushstring(lua, key);
+    lua_rawget(lua, 1);
+}
+
 int lua55UserStateRegisterFunction(lua_State *lua) {
     int argc = lua_gettop(lua);
-    const char *name = NULL;
 
     if (argc < 1 || argc > 2) {
         lua_pushstring(lua,
@@ -2058,64 +2118,44 @@ int lua55UserStateRegisterFunction(lua_State *lua) {
         return lua_error(lua);
     }
 
-    lua_getfield(lua, LUA_REGISTRYINDEX, "__library_functions");
-
-    if (lua_isnil(lua, -1)) {
-        lua_pop(lua, 1);
-        lua_newtable(lua);
-        lua_setfield(lua, LUA_REGISTRYINDEX, "__library_functions");
-        lua_getfield(lua, LUA_REGISTRYINDEX, "__library_functions");
-    }
-
     if (argc == 1) {
-        if (!lua_istable(lua, 1)) {
-            lua_pushstring(
-                lua,
-                "calling server.register_function with a single argument is only "
-                "applicable to Lua table (representing named arguments)");
+        lua55NamedArgKeys keys;
+        const char *err = lua55ReadNamedArgKeys(lua, &keys);
+        if (!err && !keys.function_name)
+            err = "server.register_function must get a function name argument";
+        if (!err && !keys.callback)
+            err = "server.register_function must get a callback argument";
+        if (err) {
+            lua_pushstring(lua, err);
             return lua_error(lua);
         }
-
-        lua_getfield(lua, 1, "function_name");
-        if (!lua_isstring(lua, -1)) {
-            lua_pop(lua, 2);
-            lua_pushstring(lua, "function_name argument given to "
-                                "server.register_function must be a string");
-            return lua_error(lua);
-        }
-        name = lua_tostring(lua, -1);
-        lua_pop(lua, 1);
-
-        lua_getfield(lua, 1, "callback");
-        if (!lua_isfunction(lua, -1)) {
-            lua_pop(lua, 2);
-            lua_pushstring(lua, "callback argument given to server.register_function "
-                                "must be a function");
-            return lua_error(lua);
-        }
-        lua_remove(lua, 1);
-
-    } else if (argc == 2) {
+        lua55PushNamedArg(lua, keys.function_name);
+        lua55PushNamedArg(lua, keys.callback);
+    } else {
         if (!lua_isstring(lua, 1)) {
-            lua_pop(lua, 3);
             lua_pushstring(lua, "function name must be a string");
             return lua_error(lua);
         }
-        name = lua_tostring(lua, 1);
-
         if (!lua_isfunction(lua, 2)) {
-            lua_pop(lua, 3);
             lua_pushstring(lua, "function argument must be a function");
             return lua_error(lua);
         }
-
-        lua_remove(lua, 1);
         lua_pushvalue(lua, 1);
-        lua_remove(lua, 1);
+        lua_pushvalue(lua, 2);
     }
 
-    lua_setfield(lua, 1, name);
-    lua_pop(lua, 1);
+    const char *name = lua_tostring(lua, -2);
+
+    lua_getfield(lua, LUA_REGISTRYINDEX, "__library_functions");
+    if (lua_isnil(lua, -1)) {
+        lua_pop(lua, 1);
+        lua_newtable(lua);
+        lua_pushvalue(lua, -1);
+        lua_setfield(lua, LUA_REGISTRYINDEX, "__library_functions");
+    }
+
+    lua_pushvalue(lua, -2);
+    lua_setfield(lua, -2, name);
     return 0;
 }
 
