@@ -1527,20 +1527,12 @@ static int lua55LogCommand(lua_State *lua) {
         return lua55Error(lua);
     }
 
-    char *log = NULL;
+    ValkeyModuleString *log = ValkeyModule_CreateString(NULL, "", 0);
     for (j = 1; j < argc; j++) {
-        size_t len;
-        char *s;
-
-        s = (char *)lua_tolstring(lua, (-argc) + j, &len);
+        const char *s = lua_tostring(lua, (-argc) + j);
         if (s) {
-            if (j != 1) {
-                char *next_log = lua55_asprintf("%s %s", log, s);
-                ValkeyModule_Free(log);
-                log = next_log;
-            } else {
-                log = lua55_asprintf("%s", s);
-            }
+            if (j != 1) ValkeyModule_StringAppendBuffer(NULL, log, " ", 1);
+            ValkeyModule_StringAppendBuffer(NULL, log, s, strlen(s));
         }
     }
 
@@ -1562,8 +1554,9 @@ static int lua55LogCommand(lua_State *lua) {
         ValkeyModule_Assert(0);
     }
 
-    ValkeyModule_Log(rctx ? rctx->module_ctx : NULL, level_str, "%s", log ? log : "");
-    ValkeyModule_Free(log);
+    ValkeyModule_Log(rctx ? rctx->module_ctx : NULL, level_str, "%s",
+                     ValkeyModule_StringPtrLen(log, NULL));
+    ValkeyModule_FreeString(NULL, log);
     return 0;
 }
 
